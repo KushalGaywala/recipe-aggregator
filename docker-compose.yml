@@ -1,0 +1,16 @@
+services:
+  recipe-box:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - RECIPE_MODEL=${RECIPE_MODEL:-claude-opus-5-5}
+      - RECIPE_EFFORT=${RECIPE_EFFORT:-medium}
+      - APP_PASSWORD=${APP_PASSWORD:-}
+    volumes:
+      - recipe-data:/data
+
+volumes:
+  recipe-data:

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe.name }} · Recipe Box{% endblock %}
+{% block content %}
+<p><a href="/" class="back">← All recipes</a></p>
+
+{% if existing %}<p class="alert info">This recipe is already in your box, so here it is.</p>{% endif %}
+
+<article class="card recipe">
+  {% if photos %}
+    <img class="hero" src="/uploads/{{ photos[0].filename }}" alt="{{ recipe.name }}">
+  {% endif %}
+
+  <h1>{{ recipe.name }}</h1>
+  {% if data.summary %}<p class="lead">{{ data.summary }}</p>{% endif %}
+
+  <dl class="meta">
+    {% if data.servings %}<div><dt>Serves</dt><dd>{{ data.servings }}</dd></div>{% endif %}
+    {% if data.prep_time %}<div><dt>Prep</dt><dd>{{ data.prep_time }}</dd></div>{% endif %}
+    {% if data.cook_time %}<div><dt>Cook</dt><dd>{{ data.cook_time }}</dd></div>{% endif %}
+  </dl>
+
+  {% if recipe.description %}
+    <p class="notes"><strong>Your notes:</strong> {{ recipe.description }}</p>
+  {% endif %}
+
+  <div class="columns">
+    <section>
+      <h2>Ingredients</h2>
+      <ul class="ingredients">
+        {% for item in data.ingredients %}
+        <li><label><input type="checkbox"> <span>{{ item }}</span></label></li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section>
+      <h2>Method</h2>
+      <ol class="steps">
+        {% for step in data.steps %}<li>{{ step }}</li>{% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  {% if data.tips %}
+  <section>
+    <h2>Tips</h2>
+    <ul class="tips">
+      {% for tip in data.tips %}<li>{{ tip }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</article>
+
+<section class="card" id="photos">
+  <h2>Photos</h2>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+  {% if photos %}
+  <div class="gallery">
+    {% for p in photos %}
+    <figure>
+      <a href="/uploads/{{ p.filename }}" target="_blank" rel="noopener">
+        <img src="/uploads/{{ p.filename }}" alt="Photo of {{ recipe.name }}" loading="lazy">
+      </a>
+      <form method="post" action="/photos/{{ p.id }}/delete" onsubmit="return confirm('Delete this photo?')">
+        <button type="submit" class="icon-button" title="Delete photo" aria-label="Delete photo">✕</button>
+      </form>
+    </figure>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No photos yet. Add some after you've cooked it.</p>
+  {% endif %}
+
+  <form method="post" action="/recipes/{{ recipe.id }}/photos" enctype="multipart/form-data" class="upload">
+    <input type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple required>
+    <button type="submit">Upload</button>
+  </form>
+</section>
+
+<form method="post" action="/recipes/{{ recipe.id }}/delete" class="danger-zone"
+      onsubmit="return confirm('Delete this recipe and its photos?')">
+  <button type="submit" class="link-button">Delete recipe</button>
+</form>
+{% endblock %}

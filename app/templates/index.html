@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>What do you want to cook?</h1>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+  <form method="post" action="/recipes" id="recipe-form">
+    <label for="name">Dish</label>
+    <input id="name" name="name" type="text" required maxlength="200" autocomplete="off"
+           placeholder="e.g. Chicken tikka masala" value="{{ name }}" autofocus>
+    <p class="hint" id="match-hint" hidden>Already in your recipe box. This opens the saved recipe.</p>
+
+    <label for="description">Notes <span class="muted">(optional)</span></label>
+    <textarea id="description" name="description" rows="3" maxlength="2000"
+              placeholder="e.g. vegetarian, serves 6, no oven, extra spicy">{{ description }}</textarea>
+
+    <button type="submit" id="submit">Get recipe</button>
+    <p class="hint" id="wait-hint" hidden>Writing your recipe. This usually takes under a minute.</p>
+  </form>
+</section>
+
+<section>
+  <h2>Your recipes <span class="muted" id="count">{{ recipes|length }}</span></h2>
+  {% if recipes %}
+  <ul class="recipe-list" id="recipe-list">
+    {% for r in recipes %}
+    <li data-key="{{ r.key }}">
+      <a href="/recipes/{{ r.id }}" class="recipe-item">
+        {% if r.cover %}
+          <img src="/uploads/{{ r.cover }}" alt="" loading="lazy">
+        {% else %}
+          <span class="thumb-placeholder" aria-hidden="true">🍽️</span>
+        {% endif %}
+        <span>
+          <strong>{{ r.name }}</strong>
+          <span class="muted summary">{{ r.summary }}</span>
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="muted" id="no-matches" hidden>No saved recipe matches. Press "Get recipe" to create one.</p>
+  {% else %}
+  <p class="muted">No recipes yet. Type a dish above to create your first one.</p>
+  {% endif %}
+</section>
+
+<script>
+  // Same normalisation as name_key() on the server: lowercase, keep letters/numbers, collapse the rest.
+  const keyOf = (s) => s.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}\p{M}]+/gu, " ").trim();
+  const nameInput = document.getElementById("name");
+  const items = [...document.querySelectorAll("#recipe-list li")];
+  const button = document.getElementById("submit");
+  const matchHint = document.getElementById("match-hint");
+  const noMatches = document.getElementById("no-matches");
+
+  function update() {
+    const key = keyOf(nameInput.value);
+    let shown = 0, exact = false;
+    for (const li of items) {
+      const visible = !key || li.dataset.key.includes(key);
+      li.hidden = !visible;
+      if (visible) shown++;
+      if (li.dataset.key === key) exact = true;
+    }
+    if (noMatches) noMatches.hidden = shown > 0;
+    matchHint.hidden = !exact;
+    button.textContent = exact ? "Open recipe" : "Get recipe";
+  }
+  nameInput.addEventListener("input", update);
+  update();
+
+  document.getElementById("recipe-form").addEventListener("submit", () => {
+    button.disabled = true;
+    if (button.textContent === "Get recipe") {
+      button.textContent = "Writing recipe…";
+      document.getElementById("wait-hint").hidden = false;
+    }
+  });
+  // Re-enable the button if the page is restored from the back/forward cache.
+  window.addEventListener("pageshow", () => { button.disabled = false; update(); });
+</script>
+{% endblock %}
